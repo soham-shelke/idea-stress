@@ -1,0 +1,5 @@
+.kiro/
+node_modules/
+.env
+dist/
+build/
