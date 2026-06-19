@@ -2,8 +2,7 @@
 __pycache__/
 *.pyc
 .venv/
-excavator_payload.zip
-research_payload.zip
+*_payload.zip
 
 # Ignore everything in excavator folder (Lambda dependencies)
 excavator/*
