@@ -3,9 +3,13 @@ __pycache__/
 *.pyc
 .venv/
 excavator_payload.zip
+research_payload.zip
 
 # Ignore everything in excavator folder (Lambda dependencies)
 excavator/*
-
-# Except our actual source code
 !excavator/lambda_function.py
+
+# Ignore everything in research folder (Lambda dependencies)
+research/*
+!research/lambda_function.py
+!research/requirements.txt
