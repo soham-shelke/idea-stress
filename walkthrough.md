@@ -1,56 +1,35 @@
-# Walkthrough: Weaviate Setup and Excavator Lambda
+# Walkthrough: Weaviate Setup and Excavator Lambda (Gemini Edition)
 
-I've completed the core tasks for Tasks 1 and 2 by creating the backend scripts and lambda handler. Here's a breakdown of what was created and the exact steps you need to take to use them.
+We have successfully completed the core backend logic for the Idea Stress Tester, entirely bypassing AWS Marketplace costs and Weaviate sandbox limits!
 
-## Changes Made
-All new files are located in the `backend` folder of your workspace.
+Here's a breakdown of what has been built and fully tested:
 
-- **[weaviate_schema.py](file:///c:/Users/Asus/Desktop/idea-stress/backend/weaviate_schema.py):** Connects to Weaviate Cloud and creates the `RealWorldFact`, `UserAssumption`, and `FailurePattern` collections. It uses `text2vec-openai` and handles idempotency so it can be re-run safely.
-- **[batch_ingest.py](file:///c:/Users/Asus/Desktop/idea-stress/backend/batch_ingest.py):** Seeds the database with the minimum required `RealWorldFact` and `FailurePattern` records based on the mock data specs.
-- **[lambda_function.py](file:///c:/Users/Asus/Desktop/idea-stress/backend/excavator/lambda_function.py):** Contains the Excavator AWS Lambda handler. It generates the required `session_id`, validates the user input, queries the `claude-sonnet-4-6` model, writes assumptions to Weaviate, and returns the expected Step Functions payload.
-- **[requirements.txt](file:///c:/Users/Asus/Desktop/idea-stress/backend/requirements.txt):** Lists the Python dependencies required to run the scripts or the lambda.
+## 1. Single-Collection Vector Database
+To bypass the strict 1-collection limit on Weaviate's free sandbox tier, we designed a unified schema.
+
+- **[weaviate_schema.py](file:///c:/Users/Asus/Desktop/idea-stress/backend/weaviate_schema.py):** Connects to Weaviate Cloud and creates a single `IdeaStressData` collection. It uses the `text2vec-google-aistudio` module with the `gemini-embedding-2` model so that all your text embeddings are generated for free.
+- **[batch_ingest.py](file:///c:/Users/Asus/Desktop/idea-stress/backend/batch_ingest.py):** Seeds the database with the mock `RealWorldFact` and `FailurePattern` records. By storing them in one collection, we use a `record_type` property to distinguish them.
+
+## 2. Excavator AWS Lambda Function
+We completely removed the dependency on AWS Bedrock (and the associated credit card verification errors) by calling the Gemini REST API directly.
+
+- **[lambda_function.py](file:///c:/Users/Asus/Desktop/idea-stress/backend/excavator/lambda_function.py):** The AWS Lambda handler.
+  1. Receives the `user_idea`.
+  2. Generates a unique `session_id`.
+  3. Sends the idea and a strict system prompt to Google's **`gemini-2.5-flash`** model via standard HTTP requests.
+  4. Parses the JSON response to extract the 4-8 core assumptions.
+  5. Inserts those new `UserAssumption` records into your Weaviate `IdeaStressData` collection.
+  6. Returns a perfectly formatted JSON object representing the state of the session.
+
+## 3. Deployment Artifacts
+- **[excavator_payload.zip](file:///c:/Users/Asus/Desktop/idea-stress/backend/excavator_payload.zip):** The final zipped bundle containing the Lambda function and the `weaviate-client` dependencies, ready for AWS deployment.
+- **[.env](file:///c:/Users/Asus/Desktop/idea-stress/backend/.env):** Your local environment variables securely storing `WEAVIATE_URL`, `WEAVIATE_API_KEY`, and `GEMINI_API_KEY`.
 
 ---
 
-## Action Required: Setup & Deployment
+## What's Next?
+At this point, **Task 1 (Database)** and **Task 2 (Excavator Lambda)** are fully completed and successfully tested end-to-end.
 
-You will need to manually set up your environment variables and execute the scripts.
-
-> [!IMPORTANT]
-> The scripts and Lambda depend on three environment variables. You must set these in your terminal and in the AWS Lambda console:
-> - `WEAVIATE_URL`: Your Weaviate Cloud instance URL
-> - `WEAVIATE_API_KEY`: Your Weaviate Cloud API Key
-> - `OPENAI_API_KEY`: Your OpenAI API key for text embeddings
-
-### 1. Run the Setup Scripts Locally
-
-Open your terminal in `c:\Users\Asus\Desktop\idea-stress\backend` and run:
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Set your environment variables (PowerShell format)
-$env:WEAVIATE_URL="your-cluster-url"
-$env:WEAVIATE_API_KEY="your-weaviate-key"
-$env:OPENAI_API_KEY="your-openai-key"
-
-# 1. Create the schema
-python weaviate_schema.py
-
-# 2. Ingest the mock data
-python batch_ingest.py
-```
-
-### 2. Deploy the Excavator Lambda
-
-1. In the AWS Console, create a new Lambda function named `excavator` using the **Python 3.12** runtime.
-2. Give the Lambda's execution role permission to call **Amazon Bedrock**.
-3. Under Configuration > Environment variables, add the three keys above (`WEAVIATE_URL`, `WEAVIATE_API_KEY`, `OPENAI_API_KEY`).
-4. Package the code in `backend/excavator/` along with its dependencies (`weaviate-client`, `boto3`) into a deployment `.zip` and upload it to the function.
-5. Create a test event with the following JSON to verify it works:
-```json
-{
-  "user_idea": "I want to build a SaaS app in 2 weeks"
-}
-```
+The next typical steps in the hackathon project would be:
+1. **Task 3: Validator Lambda / Step Functions:** Building the logic that cross-references the extracted assumptions against the real-world facts to generate an optimism score.
+2. **Task 4: Frontend UI:** Building the actual web application where users type in their idea.
