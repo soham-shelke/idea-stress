@@ -1,0 +1,160 @@
+{
+  "Comment": "Idea Stress Tester Master AI Workflow",
+  "StartAt": "Excavator",
+  "States": {
+    "Excavator": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT:function:excavator",
+      "Next": "Research Loop",
+      "ResultPath": "$.excavator_output"
+    },
+    "Research Loop": {
+      "Type": "Map",
+      "ItemsPath": "$.excavator_output.assumptions",
+      "ResultPath": "$.research_output",
+      "Next": "Write Gate 1 Cache",
+      "MaxConcurrency": 10,
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Research",
+        "States": {
+          "Research": {
+            "Type": "Task",
+            "Resource": "arn:aws:lambda:REGION:ACCOUNT:function:research",
+            "End": true
+          }
+        }
+      }
+    },
+    "Write Gate 1 Cache": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT:function:gate-status",
+      "Parameters": {
+        "action": "WRITE_CACHE",
+        "executionArn.$": "$$.Execution.Id",
+        "gate": "gate1",
+        "payload": {
+          "idea_summary.$": "$.excavator_output.idea_summary",
+          "session_id.$": "$.excavator_output.session_id",
+          "validated_assumptions.$": "$.research_output"
+        }
+      },
+      "ResultPath": null,
+      "Next": "Wait For Human Gate 1"
+    },
+    "Wait For Human Gate 1": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:REGION:ACCOUNT:function:gate-status",
+        "Payload": {
+          "action": "NOTIFY_WAITING",
+          "task_token.$": "$$.Task.Token"
+        }
+      },
+      "ResultPath": "$.gate1_approved_payload",
+      "Next": "Adversary"
+    },
+    "Adversary": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT:function:adversary",
+      "Parameters": {
+        "idea_summary.$": "$.gate1_approved_payload.idea_summary",
+        "session_id.$": "$.gate1_approved_payload.session_id",
+        "validated_assumptions.$": "$.gate1_approved_payload.validated_assumptions"
+      },
+      "ResultPath": "$.adversary_output",
+      "Next": "Write Gate 2 Cache"
+    },
+    "Write Gate 2 Cache": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT:function:gate-status",
+      "Parameters": {
+        "action": "WRITE_CACHE",
+        "executionArn.$": "$$.Execution.Id",
+        "gate": "gate2",
+        "payload": {
+          "adversary_output.$": "$.adversary_output"
+        }
+      },
+      "ResultPath": null,
+      "Next": "Wait For Human Gate 2"
+    },
+    "Wait For Human Gate 2": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:REGION:ACCOUNT:function:gate-status",
+        "Payload": {
+          "action": "NOTIFY_WAITING",
+          "task_token.$": "$$.Task.Token"
+        }
+      },
+      "ResultPath": "$.gate2_human_input",
+      "Next": "Set Initial Revision Null"
+    },
+    "Set Initial Revision Null": {
+      "Type": "Pass",
+      "Result": null,
+      "ResultPath": "$.revision_instructions",
+      "Next": "Planner"
+    },
+    "Planner": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT:function:planner",
+      "Parameters": {
+        "idea_summary.$": "$.gate1_approved_payload.idea_summary",
+        "validated_assumptions.$": "$.gate1_approved_payload.validated_assumptions",
+        "adversary_output.$": "$.adversary_output",
+        "user_track.$": "$.gate2_human_input.user_track",
+        "revision_instructions.$": "$.revision_instructions"
+      },
+      "ResultPath": "$.planner_output",
+      "Next": "Critic"
+    },
+    "Critic": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT:function:critic",
+      "Parameters": {
+        "idea_summary.$": "$.gate1_approved_payload.idea_summary",
+        "plan.$": "$.planner_output"
+      },
+      "ResultPath": "$.critic_output",
+      "Next": "Check Revision Needed"
+    },
+    "Check Revision Needed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.critic_output.revision_needed",
+          "BooleanEquals": true,
+          "Next": "Set Revision Instructions"
+        }
+      ],
+      "Default": "Write Output Cache"
+    },
+    "Set Revision Instructions": {
+      "Type": "Pass",
+      "InputPath": "$.critic_output.revision_instructions",
+      "ResultPath": "$.revision_instructions",
+      "Next": "Planner"
+    },
+    "Write Output Cache": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT:function:gate-status",
+      "Parameters": {
+        "action": "WRITE_CACHE",
+        "executionArn.$": "$$.Execution.Id",
+        "gate": "output",
+        "payload": {
+          "final_plan.$": "$.planner_output",
+          "critic_scores.$": "$.critic_output"
+        }
+      },
+      "ResultPath": null,
+      "End": true
+    }
+  }
+}

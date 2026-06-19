@@ -5,7 +5,7 @@ import weaviate
 import urllib.request
 
 def lambda_handler(event, context):
-    session_id = str(uuid.uuid4())
+    session_id = event.get("session_id", str(uuid.uuid4()))
     
     user_idea = event.get("user_idea", "")
     if not isinstance(user_idea, str) or not user_idea.strip():
