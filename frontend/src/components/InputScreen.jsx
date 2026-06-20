@@ -20,13 +20,13 @@ export default function InputScreen({ onSubmit }) {
   return (
     <div className="screen-container animate-in">
       <div className="glass-card">
-        <h2>What's your startup idea?</h2>
-        <p>Describe your idea in a few sentences. Our AI agents will extract the core assumptions, research them, and stress-test the concept.</p>
+        <h2>What's your big idea?</h2>
+        <p>Describe your concept, ambition, or project in a few sentences. Our AI agents will extract the core assumptions, research them, and stress-test your vision.</p>
         
         <form onSubmit={handleSubmit}>
           <textarea 
             className="input-glass mb-4"
-            placeholder="E.g., A mobile app that uses AI to write personalized bedtime stories for kids based on their day..."
+            placeholder="E.g., A bold plan to transition from marketing to software engineering, or a class project to build a solar-powered drone..."
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
             disabled={isSubmitting}

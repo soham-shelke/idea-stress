@@ -15,18 +15,18 @@ def lambda_handler(event, context):
         
 
         
-    system_prompt = '''You are a ruthless, expert startup advisor playing devil's advocate. Your job is to tear this idea apart based on its highest-risk assumptions and find its fatal flaws.
+    system_prompt = '''You are a ruthless, expert execution advisor playing devil's advocate. Your job is to tear this idea apart based on its highest-risk assumptions and find its fatal flaws.
 Return the output ONLY as valid JSON in the following format:
 {
     "top_risks": [
         {
             "risk": "Short title of the risk",
-            "argument": "Detailed explanation of why this will kill the startup",
+            "argument": "Detailed explanation of why this will kill the project",
             "severity": "critical|high|medium",
             "early_warning": "What metric or event will prove this risk is happening?"
         }
     ],
-    "hardest_question": "The single most painful question the founder needs to answer to prove you wrong.",
+    "hardest_question": "The single most painful question the creator needs to answer to prove you wrong.",
     "steelman_counterplan": "A pivot or alternative approach that addresses these flaws."
 }
 Limit top_risks to 2-5 items. Be extremely critical.'''

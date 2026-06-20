@@ -117,7 +117,7 @@ def lambda_handler(event, context):
             client.close()
 
     # Gemini Evaluation
-    system_prompt = '''You are an expert startup research agent. Your job is to evaluate a core assumption made by a founder based ONLY on the provided evidence.
+    system_prompt = '''You are an expert research agent. Your job is to evaluate a core assumption made by a user based ONLY on the provided evidence.
 Return the output ONLY as valid JSON in the following format:
 {
     "assumption_id": "the original assumption id",

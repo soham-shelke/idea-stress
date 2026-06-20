@@ -14,7 +14,7 @@ def lambda_handler(event, context):
             "body": "user_idea is required and must not be empty"
         }
         
-    system_prompt = '''You are an expert startup analyst. Analyze the provided idea and extract 4-8 core assumptions. 
+    system_prompt = '''You are an expert execution analyst. Analyze the provided idea (whether a startup, project, or life decision) and extract 4-8 core assumptions.
 Return the output ONLY as valid JSON in the following format:
 {
     "idea_summary": "Short summary of the idea",

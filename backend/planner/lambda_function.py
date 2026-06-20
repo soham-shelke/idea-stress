@@ -11,7 +11,7 @@ def lambda_handler(event, context):
     
 
         
-    system_prompt = f'''You are a masterful startup execution planner. Your goal is to map out a 30/60/90-day plan.
+    system_prompt = f'''You are a masterful execution planner. Your goal is to map out a 30/60/90-day plan.
 The user chose the track: "{user_track}". 
 If 'prototype', focus Day 30 on MVP and deploy.
 If 'find_a_user', focus Day 30 on ICP and interviews.
