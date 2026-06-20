@@ -5,6 +5,11 @@
 
 ---
 
+## 🌐 Live Demo
+**Try it now:** [https://main.dqqa45wohr6c.amplifyapp.com/](https://main.dqqa45wohr6c.amplifyapp.com/)
+
+---
+
 ## 🚀 The Problem: The Ambiguity Paralysis
 Modern aspiring founders, creators, and students have brilliant ideas but constantly suffer from **ambiguity paralysis**. When facing the leap from a "vague idea" to the "first real step," they are overwhelmed by hidden assumptions, uncalculated risks, and a lack of structured execution. Standard AI chatbots oversimplify this into generic "pros/cons" lists, generating output that lacks reasoning, factual grounding, or realistic pushback. 
 
@@ -59,6 +64,15 @@ The AI **never** decides whether the user should proceed with their idea or pivo
 **Data Disclosure:**
 - Weaviate is seeded with public startup failure patterns and real-world market facts.
 - Live context is injected via Tavily Search APIs to ensure the AI's critique is grounded in the current reality of 2026, not stale training data.
+
+---
+
+## 📖 How to Use IdeaStress
+
+1. **Submit Your Idea:** Go to the Live Demo URL and type in a brief description of your ambitious project, life goal, or startup idea.
+2. **Review Assumptions (Gate 1):** The `Excavator` and `Researcher` agents will automatically break your idea down into core assumptions and fact-check them against real-world data. Review their findings.
+3. **Face the Adversary (Gate 2):** Read the `Devil's Advocate` critique. Decide how you want to proceed: Prototype, Find a User, Pivot, or Invalidate.
+4. **Execute:** The `Planner` will instantly generate a mathematically scored, deeply reasoned 30/60/90-day execution plan tailored to your decision.
 
 ---
 
