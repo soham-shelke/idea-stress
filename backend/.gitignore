@@ -3,12 +3,30 @@ __pycache__/
 *.pyc
 .venv/
 *_payload.zip
+build_*/
 
-# Ignore everything in excavator folder (Lambda dependencies)
+# Ignore everything in lambda folders (Lambda dependencies)
+adversary/*
+!adversary/lambda_function.py
+
+critic/*
+!critic/lambda_function.py
+
 excavator/*
 !excavator/lambda_function.py
 
-# Ignore everything in research folder (Lambda dependencies)
+gate-status/*
+!gate-status/lambda_function.py
+
+planner/*
+!planner/lambda_function.py
+
 research/*
 !research/lambda_function.py
 !research/requirements.txt
+
+resume-gate/*
+!resume-gate/lambda_function.py
+
+excavator-trigger/*
+!excavator-trigger/lambda_function.py

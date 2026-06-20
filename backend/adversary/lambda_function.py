@@ -13,12 +13,7 @@ def lambda_handler(event, context):
             "body": "Missing session_id"
         }
         
-    gemini_api_key = os.environ.get("GEMINI_API_KEY")
-    if not gemini_api_key:
-        return {
-            "statusCode": 500,
-            "body": "Missing GEMINI_API_KEY environment variable"
-        }
+
         
     system_prompt = '''You are a ruthless, expert startup advisor playing devil's advocate. Your job is to tear this idea apart based on its highest-risk assumptions and find its fatal flaws.
 Return the output ONLY as valid JSON in the following format:
@@ -41,32 +36,32 @@ Limit top_risks to 2-5 items. Be extremely critical.'''
         user_prompt += f"- {assumption.get('assumption', 'Unknown')} (Risk Level: {assumption.get('risk_level', 'Unknown')})\n"
         user_prompt += f"  Evidence Summary: {assumption.get('evidence_summary', 'None')}\n\n"
         
-    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_api_key}"
-    payload = {
-        "systemInstruction": {
-            "parts": [{"text": system_prompt}]
-        },
-        "contents": [{
-            "parts": [{"text": user_prompt}]
-        }],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.5
-        }
-    }
-    
-    req = urllib.request.Request(gemini_url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
+    import boto3
+    bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
     
     try:
-        with urllib.request.urlopen(req) as response:
-            response_body = json.loads(response.read().decode('utf-8'))
-            content_text = response_body["candidates"][0]["content"]["parts"][0]["text"]
-            parsed_output = json.loads(content_text)
+        response = bedrock.converse(
+            modelId="amazon.nova-lite-v1:0",
+            messages=[{"role": "user", "content": [{"text": user_prompt}]}],
+            system=[{"text": system_prompt}],
+            inferenceConfig={"temperature": 0.5}
+        )
+        content_text = response['output']['message']['content'][0]['text'].strip()
+        
+        # Clean markdown code blocks if present
+        if content_text.startswith("```json"):
+            content_text = content_text[7:]
+        if content_text.startswith("```"):
+            content_text = content_text[3:]
+        if content_text.endswith("```"):
+            content_text = content_text[:-3]
             
-            return parsed_output
+        parsed_output = json.loads(content_text.strip())
+        
+        return parsed_output
             
     except Exception as e:
         return {
             "statusCode": 500,
-            "body": f"Error calling Gemini API: {str(e)}"
+            "body": f"Error calling Amazon Nova API: {str(e)}"
         }

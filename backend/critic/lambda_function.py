@@ -6,9 +6,7 @@ def lambda_handler(event, context):
     idea_summary = event.get("idea_summary", "")
     plan = event.get("plan", {})
     
-    gemini_api_key = os.environ.get("GEMINI_API_KEY")
-    if not gemini_api_key:
-        return {"statusCode": 500, "body": "Missing GEMINI_API_KEY"}
+
         
     system_prompt = '''You are a strict grading agent evaluating a startup execution plan.
 Grade the plan out of 10 for: feasibility, specificity, risk_coverage, and first_step_clarity.
@@ -30,31 +28,35 @@ Return the output ONLY as valid JSON in the following format:
 
     user_prompt = f"Idea Summary:\n{idea_summary}\n\nProposed Plan:\n{json.dumps(plan, indent=2)}"
     
-    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_api_key}"
-    payload = {
-        "systemInstruction": {"parts": [{"text": system_prompt}]},
-        "contents": [{"parts": [{"text": user_prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.2
-        }
-    }
-    
-    req = urllib.request.Request(gemini_url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
+    import boto3
+    bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
     
     try:
-        with urllib.request.urlopen(req) as response:
-            response_body = json.loads(response.read().decode('utf-8'))
-            content_text = response_body["candidates"][0]["content"]["parts"][0]["text"]
-            parsed_output = json.loads(content_text)
+        response = bedrock.converse(
+            modelId="amazon.nova-lite-v1:0",
+            messages=[{"role": "user", "content": [{"text": user_prompt}]}],
+            system=[{"text": system_prompt}],
+            inferenceConfig={"temperature": 0.2}
+        )
+        content_text = response['output']['message']['content'][0]['text'].strip()
+        
+        # Clean markdown code blocks if present
+        if content_text.startswith("```json"):
+            content_text = content_text[7:]
+        if content_text.startswith("```"):
+            content_text = content_text[3:]
+        if content_text.endswith("```"):
+            content_text = content_text[:-3]
             
-            # Enforce business rules strictly, bypassing LLM hallucinations
-            overall = parsed_output.get("overall", 0)
-            parsed_output["revision_needed"] = bool(overall < 7)
+        parsed_output = json.loads(content_text.strip())
+        
+        # Enforce business rules strictly, bypassing LLM hallucinations
+        overall = parsed_output.get("overall", 0)
+        parsed_output["revision_needed"] = bool(overall < 7)
+        
+        if parsed_output["revision_needed"] and not parsed_output.get("revision_instructions"):
+            parsed_output["revision_instructions"] = parsed_output.get("top_improvement", "Make the plan more specific and address the highest risks.")
             
-            if parsed_output["revision_needed"] and not parsed_output.get("revision_instructions"):
-                parsed_output["revision_instructions"] = parsed_output.get("top_improvement", "Make the plan more specific and address the highest risks.")
-                
-            return parsed_output
+        return parsed_output
     except Exception as e:
-        return {"statusCode": 500, "body": f"Error calling Gemini API: {str(e)}"}
+        return {"statusCode": 500, "body": f"Error calling Amazon Nova API: {str(e)}"}
